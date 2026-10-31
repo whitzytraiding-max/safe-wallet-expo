@@ -1,56 +1,119 @@
-# Welcome to your Expo app 👋
+# Safe Wallet — iOS App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+React Native / Expo iOS app for a passkey-secured [Safe](https://safe.global) smart account wallet on **Arbitrum Sepolia** testnet. **No seed phrase. No private key. Face ID is your wallet.**
 
-## Get started
+**TestFlight**: Available on request (internal testing, App ID `6828720770`)
 
-1. Install dependencies
+## What it does
 
-   ```bash
-   npm install
-   ```
+- Create a non-custodial crypto wallet using only Face ID — no seed phrase, no private key to back up
+- Send ETH, USDC, and ARB with Face ID confirmation
+- View real-time balances fetched from Arbitrum Sepolia
+- QR code receive screen
+- Fully dark-themed native UI
 
-2. Start the app
+## Architecture overview
 
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+iPhone Secure Enclave (P-256 key)
+        │
+        │ WebAuthn (react-native-passkey)
+        ▼
+  Safe Wallet App (Expo / React Native)
+        │
+        │ REST API
+        ▼
+  Backend Relayer (Node.js / Vercel)
+        │
+        │ viem + @safe-global/protocol-kit
+        ▼
+  Arbitrum Sepolia
+    ├─ SafeWebAuthnSignerContract  ← your "key" on-chain
+    └─ Safe smart account          ← your wallet
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+### The no-seed-phrase model
 
-### Other setup steps
+Standard crypto wallets generate a seed phrase that maps to a private key. Lose the seed phrase → lose everything. This wallet takes a different approach:
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+1. On wallet creation, the app calls `navigator.credentials.create()` — iOS generates a P-256 key pair in the **Secure Enclave** and returns the public key. The private key never leaves the chip.
+2. The public key (x, y coordinates) is sent to the backend.
+3. The backend deploys a **SafeWebAuthnSigner** contract — a contract that knows your public key and can verify P-256 signatures on-chain.
+4. A **Safe smart account** is deployed with that signer contract as its sole owner.
 
-## Learn more
+To authorize a transaction, the user taps "Confirm" → Face ID → Secure Enclave signs with the passkey private key → signature is verified on-chain by the P-256 precompile at `0x0100` (available natively on Arbitrum).
 
-To learn more about developing your project with Expo, look at the following resources:
+### Why Safe?
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Safe is battle-tested (>$100B secured historically). It's a smart contract wallet with:
+- Configurable owners + thresholds (upgrade to multi-sig later)
+- ERC-4337 compatible (account abstraction ready)
+- Audited by multiple firms
+- Used by Coinbase, Gnosis, 1inch, and others for treasury management
 
-## Join the community
+### Signature construction
 
-Join our community of developers creating universal apps.
+The WebAuthn response from the Secure Enclave is a raw P-256 signature `(r, s)` over the `clientDataHash`. The backend packs this into the format `SafeWebAuthnSigner.isValidSignature()` expects:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```
+ABI-encoded: (authenticatorData, clientDataFields, r, s)
+```
+
+This is then wrapped in Safe's **contract signature format**:
+```
+[signerAddress padded to 32 bytes]
+[offset to dynamic data = 65]
+[signature type = 0x00]
+[webAuthnSig length as uint256]
+[webAuthnSig bytes]
+```
+
+The backend handles all packing — the mobile app only needs to forward the raw WebAuthn assertion fields.
+
+## Screens
+
+| Screen | Description |
+|---|---|
+| Onboarding | "Create Wallet" → triggers Face ID passkey registration |
+| Unlock | Face ID assertion on every app open |
+| Home (Dashboard) | Total balance in USD, asset breakdown, quick-action buttons |
+| Send | Token/amount/address input → Face ID confirm → tx submitted |
+| Receive | Wallet address + copy button |
+| Swap | UI stub (DEX integration todo) |
+
+## Stack
+
+| Layer | Choice | Reason |
+|---|---|---|
+| Framework | Expo SDK 58 / React Native | Native passkey API access |
+| Passkeys | `react-native-passkey` | WebAuthn on iOS Secure Enclave |
+| State | Zustand | Simple, minimal boilerplate |
+| Navigation | Expo Router (file-based) | Works natively with Expo |
+| Styling | StyleSheet + custom theme | Dark system theme |
+| Backend | Node.js relayer on Vercel | Pays gas, handles Safe SDK |
+
+## Running locally
+
+```bash
+npm install
+npx expo start
+```
+
+Requires a physical iPhone — passkeys do not work in iOS Simulator (Secure Enclave unavailable).
+
+Set `EXPO_PUBLIC_API_URL` in `.env.local` to point at the backend:
+```
+EXPO_PUBLIC_API_URL=http://localhost:3001
+```
+
+## Known limitations / production gaps
+
+- **Passkeys need a real device** — WebAuthn is not available in iOS Simulator
+- **RP ID** is currently `awakensystem.app` — needs to be its own domain in production
+- **No tx history** — backend returns `[]`; needs a blockchain indexer (The Graph / Alchemy)
+- **No recovery flow** — if the passkey is lost and not in iCloud Keychain, the Safe account is inaccessible (mitigated in production by adding a guardian as a second owner)
+- **Testnet only** — swap `arbitrumSepolia` → `arbitrum` in backend `config.ts` for mainnet
+
+## Repo companion
+
+Relayer backend: [safe-wallet-backend](https://github.com/whitzytraiding-max/safe-wallet-backend)
