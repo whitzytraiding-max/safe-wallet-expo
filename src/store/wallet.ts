@@ -78,15 +78,8 @@ export const useWallet = create<WalletState>((set, get) => ({
         const result = await api.createWallet(passkey.pubkeyX, passkey.pubkeyY);
         safeAddress = result.safeAddress;
         signerAddress = result.signerAddress;
-      } catch {
-        // Backend unreachable or relayer not yet funded — use demo addresses
-        safeAddress = DEMO_MODE
-          ? '0x7F3a4f2B8E9c1D5A6B7C8D9E0F1A2B3C4D5E6B19'
-          : '0x' + passkey.credentialId.replace(/-/g, '').slice(0, 40).padEnd(40, '0');
-        signerAddress = DEMO_MODE
-          ? '0xF7488fFbe67327ac9f37D5F722d83Fc900852Fbf'
-          : '0x' + passkey.pubkeyX.slice(2, 42).padEnd(40, '0');
-        isMock = true;
+      } catch (err: any) {
+        throw new Error('Failed to deploy wallet: ' + (err?.message ?? 'backend unreachable'));
       }
 
       await storage.set(WALLET_ADDRESS_KEY, safeAddress);
@@ -142,7 +135,7 @@ export const useWallet = create<WalletState>((set, get) => ({
       ]);
       set({ balances, transactions, isMock: false, isRefreshing: false });
     } catch {
-      set({ balances: MOCK_BALANCES, transactions: MOCK_TRANSACTIONS, isMock: true, isRefreshing: false });
+      set({ balances: { eth: 0, usdc: 0, arb: 0, totalUSD: 0 }, transactions: [], isMock: false, isRefreshing: false });
     }
   },
 
