@@ -158,16 +158,9 @@ export const useWallet = create<WalletState>((set, get) => ({
       return '0xdemo' + Date.now().toString(16).padStart(60, '0');
     }
     try {
-      // Step 1: build the Safe transaction on the backend
       const { safeTxHash } = await api.prepareSend(walletAddress, to, amount, token);
-
-      // Step 2: sign the safeTxHash with Face ID passkey
       const assertion = await authenticatePasskey(credentialId ?? undefined);
-
-      // Step 3: parse the assertion into the fields the backend expects
       const parsed = parseAssertion(assertion.rawResponse);
-
-      // Step 4: submit to backend with full parsed signature
       const { txHash } = await api.executeSend({
         safeTxHash,
         signerAddress,

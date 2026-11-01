@@ -18,7 +18,6 @@ function fromBase64url(b64url: string): Buffer {
 
 function randomBase64url(): string {
   const bytes = new Uint8Array(32);
-  // Use crypto.getRandomValues for cryptographically secure randomness
   if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
     crypto.getRandomValues(bytes);
   } else {
