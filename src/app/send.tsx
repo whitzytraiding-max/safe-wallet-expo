@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable, KeyboardAvoidingView, Platform, Alert, ScrollView, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SymbolView } from 'expo-symbols';
@@ -53,9 +53,11 @@ export default function SendScreen() {
   };
 
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={0}
     >
       <SafeAreaView style={styles.safe}>
         <View style={styles.header}>
@@ -66,7 +68,7 @@ export default function SendScreen() {
           <View style={{ width: 40 }} />
         </View>
 
-        <View style={styles.content}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {/* Token selector */}
           <Card>
             <Text style={styles.label}>Token</Text>
@@ -118,6 +120,8 @@ export default function SendScreen() {
               autoCapitalize="none"
               autoCorrect={false}
               keyboardAppearance="dark"
+              returnKeyType="done"
+              onSubmitEditing={Keyboard.dismiss}
             />
           </Card>
 
@@ -129,9 +133,10 @@ export default function SendScreen() {
             loading={isSending}
             disabled={!to || !amount}
           />
-        </View>
+        </ScrollView>
       </SafeAreaView>
     </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 }
 

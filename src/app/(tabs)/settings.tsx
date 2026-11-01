@@ -61,7 +61,7 @@ function SectionLabel({ label }: { label: string }) {
 /* ─── Main screen ───────────────────────────────────────────────────── */
 export default function SettingsScreen() {
   const router  = useRouter();
-  const { walletAddress, signerAddress, lock } = useWallet();
+  const { walletAddress, signerAddress, isMock, lock } = useWallet();
 
   const shortAddr = (addr: string | null) =>
     addr ? addr.slice(0, 8) + '…' + addr.slice(-6) : '—';
@@ -150,8 +150,10 @@ export default function SettingsScreen() {
             label="Backend"
             rightNode={
               <View style={styles.backendStatus}>
-                <View style={styles.backendDot} />
-                <Text style={styles.backendText}>Demo mode — not connected</Text>
+                <View style={[styles.backendDot, !isMock && styles.backendDotLive]} />
+                <Text style={styles.backendText}>
+                  {isMock ? 'Demo mode — not connected' : 'Connected · Arbitrum Sepolia'}
+                </Text>
               </View>
             }
             last
@@ -245,7 +247,8 @@ const styles = StyleSheet.create({
   activeBadgeText: { color: Colors.green, fontSize: 11, fontWeight: '700' },
 
   backendStatus: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  backendDot:   { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.green },
+  backendDot:      { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.textMuted },
+  backendDotLive:  { backgroundColor: Colors.green },
   backendText:  { color: Colors.textSecondary, fontSize: 12 },
 
   version: {
