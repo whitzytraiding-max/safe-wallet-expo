@@ -3,7 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import { api, WalletBalances, Transaction, MOCK_BALANCES, MOCK_TRANSACTIONS } from '../services/api';
 import { createPasskey, authenticatePasskey, parseAssertion } from '../services/passkey';
 
-const DEMO_MODE = process.env.EXPO_PUBLIC_DEMO === 'true';
+const DEMO_MODE = false;
 
 const storage = {
   get: (key: string) => DEMO_MODE ? Promise.resolve(null) : SecureStore.getItemAsync(key),

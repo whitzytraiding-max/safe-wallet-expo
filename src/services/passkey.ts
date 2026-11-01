@@ -1,7 +1,7 @@
 import { Passkey, PasskeyCreateResult, PasskeyGetResult } from 'react-native-passkey';
 import { Buffer } from 'buffer';
 
-const DEMO_MODE = process.env.EXPO_PUBLIC_DEMO === 'true';
+const DEMO_MODE = false;
 
 const RP_ID = 'awakensystem.app';
 const RP_NAME = 'Safe Wallet';
