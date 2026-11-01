@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Alert, Clipboard } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Alert, Clipboard, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SymbolView } from 'expo-symbols';
 import * as Haptics from 'expo-haptics';
 import { useWallet } from '../store/wallet';
 import { Colors, Spacing, Radius } from '../theme';
+import QRCode from 'react-native-qrcode-svg';
 
 export default function ReceiveScreen() {
   const router = useRouter();
@@ -27,7 +28,9 @@ export default function ReceiveScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.closeBtn}>
-            <SymbolView name="xmark" size={16} tintColor={Colors.textSecondary} />
+            {Platform.OS === 'ios'
+              ? <SymbolView name="xmark" size={16} tintColor={Colors.textSecondary} />
+              : <Text style={{ color: Colors.textSecondary, fontSize: 16, fontWeight: '600' }}>✕</Text>}
           </Pressable>
           <Text style={styles.title}>Receive</Text>
           <View style={{ width: 40 }} />
@@ -40,10 +43,21 @@ export default function ReceiveScreen() {
             <Text style={styles.networkText}>Arbitrum Sepolia</Text>
           </View>
 
-          {/* QR code placeholder */}
+          {/* QR code */}
           <View style={styles.qrWrap}>
             <View style={styles.qrBox}>
-              <SymbolView name="qrcode" size={120} tintColor={Colors.textPrimary} />
+              {walletAddress ? (
+                <QRCode
+                  value={walletAddress}
+                  size={160}
+                  backgroundColor={Colors.card}
+                  color={Colors.textPrimary}
+                />
+              ) : (
+                Platform.OS === 'ios'
+                  ? <SymbolView name="qrcode" size={120} tintColor={Colors.textPrimary} />
+                  : <Text style={{ color: Colors.textSecondary, fontSize: 12 }}>No address</Text>
+              )}
             </View>
             <Text style={styles.qrHint}>Scan to receive funds on Arbitrum</Text>
           </View>
@@ -58,20 +72,22 @@ export default function ReceiveScreen() {
               style={({ pressed }) => [styles.copyBtn, pressed && { opacity: 0.7 }]}
               onPress={handleCopy}
             >
-              <SymbolView
-                name={copied ? 'checkmark.circle.fill' : 'doc.on.doc.fill'}
-                size={16}
-                tintColor={copied ? Colors.green : Colors.accent}
-              />
+              {Platform.OS === 'ios' && (
+                <SymbolView
+                  name={copied ? 'checkmark.circle.fill' : 'doc.on.doc.fill'}
+                  size={16}
+                  tintColor={copied ? Colors.green : Colors.accent}
+                />
+              )}
               <Text style={[styles.copyText, copied && { color: Colors.green }]}>
-                {copied ? 'Copied!' : 'Copy address'}
+                {copied ? '✓ Copied!' : 'Copy address'}
               </Text>
             </Pressable>
           </View>
 
           {/* Info note */}
           <View style={styles.infoBox}>
-            <SymbolView name="info.circle" size={15} tintColor={Colors.textMuted} />
+            {Platform.OS === 'ios' && <SymbolView name="info.circle" size={15} tintColor={Colors.textMuted} />}
             <Text style={styles.infoText}>
               Only send Arbitrum-compatible assets to this address. Sending assets from other networks may result in permanent loss.
             </Text>

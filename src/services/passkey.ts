@@ -1,6 +1,8 @@
 import { Passkey, PasskeyCreateResult, PasskeyGetResult } from 'react-native-passkey';
 import { Buffer } from 'buffer';
 
+const DEMO_MODE = process.env.EXPO_PUBLIC_DEMO === 'true';
+
 const RP_ID = 'awakensystem.app';
 const RP_NAME = 'Safe Wallet';
 
@@ -49,6 +51,15 @@ export interface ParsedAssertion {
 }
 
 export async function createPasskey(userId: string): Promise<PasskeyResult> {
+  if (DEMO_MODE) {
+    await new Promise(r => setTimeout(r, 800));
+    return {
+      credentialId: 'demo-cred-' + userId,
+      pubkeyX: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      pubkeyY: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+      rawResponse: {} as PasskeyCreateResult,
+    };
+  }
   const result = await Passkey.create({
     challenge: randomBase64url(),
     rp: { id: RP_ID, name: RP_NAME },
@@ -73,6 +84,10 @@ export async function createPasskey(userId: string): Promise<PasskeyResult> {
 }
 
 export async function authenticatePasskey(credentialId?: string): Promise<PasskeyAssertionResult> {
+  if (DEMO_MODE) {
+    await new Promise(r => setTimeout(r, 600));
+    return { credentialId: credentialId ?? 'demo-cred', rawResponse: {} as PasskeyGetResult };
+  }
   const result = await Passkey.get({
     challenge: randomBase64url(),
     rpId: RP_ID,

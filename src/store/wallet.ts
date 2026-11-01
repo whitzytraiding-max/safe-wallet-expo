@@ -3,6 +3,13 @@ import * as SecureStore from 'expo-secure-store';
 import { api, WalletBalances, Transaction, MOCK_BALANCES, MOCK_TRANSACTIONS } from '../services/api';
 import { createPasskey, authenticatePasskey, parseAssertion } from '../services/passkey';
 
+const DEMO_MODE = process.env.EXPO_PUBLIC_DEMO === 'true';
+
+const storage = {
+  get: (key: string) => DEMO_MODE ? Promise.resolve(null) : SecureStore.getItemAsync(key),
+  set: (key: string, val: string) => DEMO_MODE ? Promise.resolve() : SecureStore.setItemAsync(key, val),
+};
+
 type Stage = 'loading' | 'onboarding' | 'locked' | 'unlocked';
 
 interface WalletState {
@@ -47,9 +54,9 @@ export const useWallet = create<WalletState>((set, get) => ({
   lastError: null,
 
   init: async () => {
-    const address = await SecureStore.getItemAsync(WALLET_ADDRESS_KEY);
-    const signer = await SecureStore.getItemAsync(SIGNER_ADDRESS_KEY);
-    const credId = await SecureStore.getItemAsync(CREDENTIAL_ID_KEY);
+    const address = await storage.get(WALLET_ADDRESS_KEY);
+    const signer = await storage.get(SIGNER_ADDRESS_KEY);
+    const credId = await storage.get(CREDENTIAL_ID_KEY);
     if (address) {
       set({ walletAddress: address, signerAddress: signer, credentialId: credId, stage: 'locked' });
     } else {
@@ -72,15 +79,19 @@ export const useWallet = create<WalletState>((set, get) => ({
         safeAddress = result.safeAddress;
         signerAddress = result.signerAddress;
       } catch {
-        // Backend unreachable or relayer not yet funded — use derived mock addresses
-        safeAddress = '0x' + passkey.credentialId.replace(/-/g, '').slice(0, 40).padEnd(40, '0');
-        signerAddress = '0x' + passkey.pubkeyX.slice(2, 42).padEnd(40, '0');
+        // Backend unreachable or relayer not yet funded — use demo addresses
+        safeAddress = DEMO_MODE
+          ? '0x7F3a4f2B8E9c1D5A6B7C8D9E0F1A2B3C4D5E6B19'
+          : '0x' + passkey.credentialId.replace(/-/g, '').slice(0, 40).padEnd(40, '0');
+        signerAddress = DEMO_MODE
+          ? '0xF7488fFbe67327ac9f37D5F722d83Fc900852Fbf'
+          : '0x' + passkey.pubkeyX.slice(2, 42).padEnd(40, '0');
         isMock = true;
       }
 
-      await SecureStore.setItemAsync(WALLET_ADDRESS_KEY, safeAddress);
-      await SecureStore.setItemAsync(SIGNER_ADDRESS_KEY, signerAddress);
-      await SecureStore.setItemAsync(CREDENTIAL_ID_KEY, passkey.credentialId);
+      await storage.set(WALLET_ADDRESS_KEY, safeAddress);
+      await storage.set(SIGNER_ADDRESS_KEY, signerAddress);
+      await storage.set(CREDENTIAL_ID_KEY, passkey.credentialId);
 
       set({
         walletAddress: safeAddress,
@@ -129,10 +140,16 @@ export const useWallet = create<WalletState>((set, get) => ({
   },
 
   sendToken: async (to: string, amount: string, token: string) => {
-    const { walletAddress, signerAddress, credentialId } = get();
+    const { walletAddress, signerAddress, credentialId, isMock } = get();
     if (!walletAddress) throw new Error('No wallet');
     if (!signerAddress) throw new Error('No signer address');
     set({ isSending: true, lastError: null });
+
+    if (isMock) {
+      await new Promise(r => setTimeout(r, 1800));
+      set({ isSending: false });
+      return '0xdemo' + Date.now().toString(16).padStart(60, '0');
+    }
     try {
       // Step 1: build the Safe transaction on the backend
       const { safeTxHash } = await api.prepareSend(walletAddress, to, amount, token);

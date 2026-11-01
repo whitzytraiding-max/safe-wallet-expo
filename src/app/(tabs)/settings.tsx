@@ -107,19 +107,6 @@ export default function SettingsScreen() {
           />
         </Section>
 
-        {isMock && (
-          <>
-            <Text style={styles.sectionLabel}>Status</Text>
-            <Section>
-              <SettingRow
-                symbol="exclamationmark.triangle"
-                label="Backend"
-                value="Demo mode — not connected"
-                last
-              />
-            </Section>
-          </>
-        )}
 
         <Text style={styles.sectionLabel}>Actions</Text>
         <Section>

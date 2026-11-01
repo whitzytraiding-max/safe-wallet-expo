@@ -81,7 +81,7 @@ export default function HomeScreen() {
                   <Pressable onPress={handleCopyAddress} hitSlop={8}>
                     <Text style={styles.addressLabel}>
                       {shortAddr(walletAddress)}
-                      {isMock ? '  ·  demo' : '  ·  Arbitrum'}
+                      {'  ·  Arbitrum'}
                     </Text>
                   </Pressable>
                 ) : null}
@@ -105,14 +105,11 @@ export default function HomeScreen() {
               <Text style={styles.balanceLabel}>Portfolio Value</Text>
               <View style={styles.networkPill}>
                 <View style={styles.networkDot} />
-                <Text style={styles.networkText}>{isMock ? 'Demo' : 'Arbitrum'}</Text>
+                <Text style={styles.networkText}>Arbitrum</Text>
               </View>
             </View>
 
             <Text style={styles.balanceAmount}>${balances.totalUSD.toFixed(2)}</Text>
-            {isMock && (
-              <Text style={styles.demoNote}>Connect backend for live balances</Text>
-            )}
 
             {/* Quick actions */}
             <View style={styles.actions}>
