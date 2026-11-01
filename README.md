@@ -6,11 +6,7 @@ React Native / Expo iOS app for a passkey-secured [Safe](https://safe.global) sm
 
 ## What it does
 
-- Create a non-custodial crypto wallet using only Face ID — no seed phrase, no private key to back up
-- Send ETH, USDC, and ARB with Face ID confirmation
-- View real-time balances fetched from Arbitrum Sepolia
-- QR code receive screen
-- Fully dark-themed native UI
+Face ID creates your wallet. Tapping "Send" opens Face ID again. There's no seed phrase to write down and no private key — the P-256 key pair lives in the iOS Secure Enclave and never leaves the device. Balances are fetched live from Arbitrum Sepolia across ETH, USDC, and ARB.
 
 ## Architecture overview
 
@@ -45,11 +41,7 @@ To authorize a transaction, the user taps "Confirm" → Face ID → Secure Encla
 
 ### Why Safe?
 
-Safe is battle-tested (>$100B secured historically). It's a smart contract wallet with:
-- Configurable owners + thresholds (upgrade to multi-sig later)
-- ERC-4337 compatible (account abstraction ready)
-- Audited by multiple firms
-- Used by Coinbase, Gnosis, 1inch, and others for treasury management
+Safe is the obvious choice for a production smart contract wallet — it's audited, battle-tested, and used by serious teams (Coinbase, Gnosis, 1inch) for treasury management. More importantly, it's modular: the 1-of-1 passkey signer you start with can be upgraded to multi-sig later without touching the account address. ERC-4337 compatibility also means gas abstraction is straightforward when you want it.
 
 ### Signature construction
 
