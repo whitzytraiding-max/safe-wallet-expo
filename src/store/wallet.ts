@@ -128,6 +128,13 @@ export const useWallet = create<WalletState>((set, get) => ({
     const { walletAddress } = get();
     if (!walletAddress) return;
     set({ isRefreshing: true });
+
+    if (DEMO_MODE) {
+      await new Promise(r => setTimeout(r, 400));
+      set({ balances: MOCK_BALANCES, transactions: MOCK_TRANSACTIONS, isMock: true, isRefreshing: false });
+      return;
+    }
+
     try {
       const [balances, transactions] = await Promise.all([
         api.getBalance(walletAddress),
@@ -135,7 +142,7 @@ export const useWallet = create<WalletState>((set, get) => ({
       ]);
       set({ balances, transactions, isMock: false, isRefreshing: false });
     } catch {
-      set({ isMock: true, isRefreshing: false });
+      set({ balances: MOCK_BALANCES, transactions: MOCK_TRANSACTIONS, isMock: true, isRefreshing: false });
     }
   },
 

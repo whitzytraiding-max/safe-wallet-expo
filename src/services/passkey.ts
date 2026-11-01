@@ -52,7 +52,7 @@ export interface ParsedAssertion {
 
 export async function createPasskey(userId: string): Promise<PasskeyResult> {
   if (DEMO_MODE) {
-    await new Promise(r => setTimeout(r, 800));
+    await new Promise(r => setTimeout(r, 3200));
     return {
       credentialId: 'demo-cred-' + userId,
       pubkeyX: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
