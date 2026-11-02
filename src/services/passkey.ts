@@ -116,11 +116,14 @@ export function parseAssertion(result: PasskeyGetResult): ParsedAssertion {
 function extractClientDataFields(clientDataJSONb64url: string): string {
   const json = fromBase64url(clientDataJSONb64url).toString('utf8');
   // clientDataJSON = {"type":"webauthn.get","challenge":"<b64url>","origin":"..."}
-  // Safe's signer reconstructs it as: prefix + challenge + clientDataFields
-  // So we need everything after the challenge value
+  // The Safe WebAuthn contract reconstructs JSON as:
+  //   '{"type":"webauthn.get","challenge":"' + base64url(challenge) + '"' + clientDataFields + '}'
+  // So clientDataFields = everything after the closing " of the challenge value,
+  // WITHOUT the trailing } (the contract appends its own closing brace).
   const match = json.match(/"challenge":"[^"]*"(.*)/s);
   if (!match) throw new Error('clientDataJSON missing challenge field');
-  return match[1]; // e.g. ,"origin":"https://awakensystem.app","crossOrigin":false}
+  const fields = match[1]; // e.g. ,"origin":"https://awakensystem.app","crossOrigin":false}
+  return fields.endsWith('}') ? fields.slice(0, -1) : fields;
 }
 
 function parseDerSignature(sigB64url: string): { r: string; s: string } {
