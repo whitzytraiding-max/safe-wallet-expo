@@ -37,7 +37,7 @@ Standard crypto wallets generate a seed phrase that maps to a private key. Lose 
 3. The backend deploys a **SafeWebAuthnSigner** contract — a contract that knows your public key and can verify P-256 signatures on-chain.
 4. A **Safe smart account** is deployed with that signer contract as its sole owner.
 
-To authorize a transaction, the user taps "Confirm" → Face ID → Secure Enclave signs with the passkey private key → signature is verified on-chain by the P-256 precompile at `0x0100` (available natively on Arbitrum).
+To authorize a transaction, the user taps "Confirm" → Face ID → Secure Enclave signs with the passkey private key → signature is verified on-chain by the [Daimo P-256 verifier](https://github.com/daimo-eth/p256-verifier) (`0xc2b78104907F722DABAc4C69f826a522B2754De4`), a pure-Solidity verifier deployed across major EVM chains via CREATE2.
 
 ### Why Safe?
 

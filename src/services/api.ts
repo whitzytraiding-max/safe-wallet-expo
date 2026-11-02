@@ -5,7 +5,11 @@ async function request<T>(path: string, opts?: RequestInit): Promise<T> {
     headers: { 'Content-Type': 'application/json' },
     ...opts,
   });
-  if (!res.ok) throw new Error(`API ${path} → ${res.status}`);
+  if (!res.ok) {
+    let msg = `API ${path} → ${res.status}`;
+    try { const body = await res.json(); if (body?.error) msg += ': ' + body.error; } catch {}
+    throw new Error(msg);
+  }
   return res.json() as Promise<T>;
 }
 
