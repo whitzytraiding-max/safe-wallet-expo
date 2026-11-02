@@ -61,7 +61,7 @@ function SectionLabel({ label }: { label: string }) {
 /* ─── Main screen ───────────────────────────────────────────────────── */
 export default function SettingsScreen() {
   const router  = useRouter();
-  const { walletAddress, signerAddress, isMock, lock } = useWallet();
+  const { walletAddress, signerAddress, isMock, lock, init } = useWallet();
 
   const shortAddr = (addr: string | null) =>
     addr ? addr.slice(0, 8) + '…' + addr.slice(-6) : '—';
@@ -85,6 +85,7 @@ export default function SettingsScreen() {
             await SecureStore.deleteItemAsync('safe_wallet_address');
             await SecureStore.deleteItemAsync('safe_wallet_signer');
             await SecureStore.deleteItemAsync('safe_wallet_credential_id');
+            await init();
             router.replace('/');
           },
         },
