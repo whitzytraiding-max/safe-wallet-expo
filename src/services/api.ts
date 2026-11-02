@@ -34,13 +34,25 @@ export interface CreateWalletResponse {
   explorerUrl: string;
 }
 
-export interface ExecuteSendParams {
+export interface TxParams {
+  safeAddress: string;
+  txTo: string;
+  txValue: string;
+  txData: string;
+}
+
+export interface PrepareSendResponse {
   safeTxHash: string;
+  txParams: TxParams;
+}
+
+export interface ExecuteSendParams {
   signerAddress: string;
   authenticatorData: string;
   clientDataFields: string;
   r: string;
   s: string;
+  txParams: TxParams;
 }
 
 export const api = {
@@ -57,7 +69,7 @@ export const api = {
     request<Transaction[]>(`/api/wallet/${address}/transactions`),
 
   prepareSend: (safeAddress: string, to: string, amount: string, token: string) =>
-    request<{ safeTxHash: string }>('/api/wallet/send/prepare', {
+    request<PrepareSendResponse>('/api/wallet/send/prepare', {
       method: 'POST',
       body: JSON.stringify({ safeAddress, to, amount, token }),
     }),

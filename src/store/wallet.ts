@@ -151,13 +151,13 @@ export const useWallet = create<WalletState>((set, get) => ({
       return '0xdemo' + Date.now().toString(16).padStart(60, '0');
     }
     try {
-      const { safeTxHash } = await api.prepareSend(walletAddress, to, amount, token);
+      const { safeTxHash, txParams } = await api.prepareSend(walletAddress, to, amount, token);
       // Safe contract verifies the passkey signed over base64url(safeTxHash) as the challenge
       const challenge = safeTxHashToChallenge(safeTxHash);
       const assertion = await authenticatePasskey(credentialId ?? undefined, challenge);
       const parsed = parseAssertion(assertion.rawResponse);
       const { txHash } = await api.executeSend({
-        safeTxHash,
+        txParams,
         signerAddress,
         authenticatorData: parsed.authenticatorData,
         clientDataFields: parsed.clientDataFields,
