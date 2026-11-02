@@ -115,15 +115,16 @@ export function parseAssertion(result: PasskeyGetResult): ParsedAssertion {
 
 function extractClientDataFields(clientDataJSONb64url: string): string {
   const json = fromBase64url(clientDataJSONb64url).toString('utf8');
-  // clientDataJSON = {"type":"webauthn.get","challenge":"<b64url>","origin":"..."}
-  // The Safe WebAuthn contract reconstructs JSON as:
-  //   '{"type":"webauthn.get","challenge":"' + base64url(challenge) + '"' + clientDataFields + '}'
-  // So clientDataFields = everything after the closing " of the challenge value,
-  // WITHOUT the trailing } (the contract appends its own closing brace).
+  // The Safe WebAuthn contract template is:
+  //   '{"type":"webauthn.get","challenge":"' + base64url(msg) + '",' + clientDataFields + '}'
+  // The template already includes the comma separator after the challenge closing quote.
+  // So clientDataFields must NOT include a leading comma.
   const match = json.match(/"challenge":"[^"]*"(.*)/s);
   if (!match) throw new Error('clientDataJSON missing challenge field');
-  const fields = match[1]; // e.g. ,"origin":"https://awakensystem.app","crossOrigin":false}
-  return fields.endsWith('}') ? fields.slice(0, -1) : fields;
+  let fields = match[1]; // e.g. ,"origin":"https://awakensystem.app"}
+  if (fields.endsWith('}')) fields = fields.slice(0, -1);  // strip trailing }
+  if (fields.startsWith(',')) fields = fields.slice(1);     // strip leading , (already in template)
+  return fields;
 }
 
 function parseDerSignature(sigB64url: string): { r: string; s: string } {
