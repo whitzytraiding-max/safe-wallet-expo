@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 import { api, WalletBalances, Transaction, MOCK_BALANCES, MOCK_TRANSACTIONS } from '../services/api';
-import { createPasskey, authenticatePasskey, parseAssertion } from '../services/passkey';
+import { createPasskey, authenticatePasskey, parseAssertion, safeTxHashToChallenge } from '../services/passkey';
 
 const DEMO_MODE = false;
 
@@ -152,7 +152,9 @@ export const useWallet = create<WalletState>((set, get) => ({
     }
     try {
       const { safeTxHash } = await api.prepareSend(walletAddress, to, amount, token);
-      const assertion = await authenticatePasskey(credentialId ?? undefined);
+      // Safe contract verifies the passkey signed over base64url(safeTxHash) as the challenge
+      const challenge = safeTxHashToChallenge(safeTxHash);
+      const assertion = await authenticatePasskey(credentialId ?? undefined, challenge);
       const parsed = parseAssertion(assertion.rawResponse);
       const { txHash } = await api.executeSend({
         safeTxHash,

@@ -10,6 +10,12 @@ function toBase64url(b64: string): string {
   return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
+// Convert a 0x-prefixed safeTxHash to the base64url challenge the WebAuthn authenticator must sign
+export function safeTxHashToChallenge(safeTxHash: string): string {
+  const bytes = Buffer.from(safeTxHash.replace(/^0x/, ''), 'hex');
+  return toBase64url(bytes.toString('base64'));
+}
+
 function fromBase64url(b64url: string): Buffer {
   const b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
   const pad = (4 - (b64.length % 4)) % 4;
@@ -82,13 +88,13 @@ export async function createPasskey(userId: string): Promise<PasskeyResult> {
   return { credentialId: result.id, pubkeyX, pubkeyY, rawResponse: result };
 }
 
-export async function authenticatePasskey(credentialId?: string): Promise<PasskeyAssertionResult> {
+export async function authenticatePasskey(credentialId?: string, challenge?: string): Promise<PasskeyAssertionResult> {
   if (DEMO_MODE) {
     await new Promise(r => setTimeout(r, 600));
     return { credentialId: credentialId ?? 'demo-cred', rawResponse: {} as PasskeyGetResult };
   }
   const result = await Passkey.get({
-    challenge: randomBase64url(),
+    challenge: challenge ?? randomBase64url(),
     rpId: RP_ID,
     timeout: 60000,
     userVerification: 'required',
